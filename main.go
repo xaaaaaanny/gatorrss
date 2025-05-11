@@ -48,7 +48,8 @@ func main() {
 	existCommands.register("register", handlerRegister)
 	existCommands.register("reset", handlerReset)
 	existCommands.register("users", handlerListUsers)
-	
+	existCommands.register("agg", handlerAggregate)
+
 	cmdName := os.Args[1]
 	cmdArgs := os.Args[2:]
 
