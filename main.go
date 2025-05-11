@@ -1,13 +1,19 @@
 package main
 
 import (
-	"fmt"
+	"database/sql"
+	_ "github.com/lib/pq"
+	"github.com/xaaaaaanny/gatorrss/internal/database"
+)
+
+import (
 	"github.com/xaaaaaanny/gatorrss/internal/config"
 	"log"
 	"os"
 )
 
 type state struct {
+	db     *database.Queries
 	Config *config.Config
 }
 
@@ -17,7 +23,16 @@ func main() {
 		log.Fatalf("can`t read config file: %v", err)
 	}
 
+	dbURL := cfg.DbURL
+	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatalf("cant connect to db: %v", err)
+	}
+	defer db.Close()
+	dbQueries := database.New(db)
+
 	appState := &state{
+		db:     dbQueries,
 		Config: &cfg,
 	}
 
@@ -30,9 +45,15 @@ func main() {
 	}
 
 	existCommands.register("login", handlerLogin)
+	existCommands.register("register", handlerRegister)
+	existCommands.register("reset", handlerReset)
+	existCommands.register("users", handlerListUsers)
+	
 	cmdName := os.Args[1]
 	cmdArgs := os.Args[2:]
 
 	err = existCommands.run(appState, command{Name: cmdName, Args: cmdArgs})
-	fmt.Println(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
