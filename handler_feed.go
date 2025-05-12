@@ -50,3 +50,25 @@ func handlerCreateFeed(s *state, cmd command) error {
 	fmt.Printf("Feed %v successfuly added\n", feed.Name)
 	return nil
 }
+
+func handlerListFeeds(s *state, cmd command) error {
+	feeds, err := s.db.GetFeeds(context.Background())
+	if err != nil {
+		return err
+	}
+
+	if len(feeds) == 0 {
+		return fmt.Errorf("No feeds yet")
+	}
+
+	for _, feed := range feeds {
+		fmt.Println(feed.Name)
+		fmt.Println(feed.Url)
+		userName, err := s.db.GetUsernameByUserId(context.Background(), feed.UserID)
+		if err != nil {
+			return err
+		}
+		fmt.Println(userName)
+	}
+	return nil
+}

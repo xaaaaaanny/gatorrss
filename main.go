@@ -50,6 +50,7 @@ func main() {
 	existCommands.register("users", handlerListUsers)
 	existCommands.register("agg", handlerAggregate)
 	existCommands.register("addfeed", handlerCreateFeed)
+	existCommands.register("feeds", handlerListFeeds)
 
 	cmdName := os.Args[1]
 	cmdArgs := os.Args[2:]
