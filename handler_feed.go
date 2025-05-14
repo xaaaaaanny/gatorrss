@@ -47,7 +47,21 @@ func handlerCreateFeed(s *state, cmd command) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Feed %v successfuly added\n", feed.Name)
+	fmt.Printf("Feed %v successfuly created\n", feed.Name)
+
+	feedFollowParam := database.CreateFeedFollowParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		UserID:    userID,
+		FeedID:    feed.ID,
+	}
+
+	_, err = s.db.CreateFeedFollow(context.Background(), feedFollowParam)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Feed successfully followed")
 	return nil
 }
 
@@ -64,11 +78,11 @@ func handlerListFeeds(s *state, cmd command) error {
 	for _, feed := range feeds {
 		fmt.Println(feed.Name)
 		fmt.Println(feed.Url)
-		userName, err := s.db.GetUsernameByUserId(context.Background(), feed.UserID)
+		user, err := s.db.GetUsernameByUserId(context.Background(), feed.UserID)
 		if err != nil {
 			return err
 		}
-		fmt.Println(userName)
+		fmt.Println(user.Name)
 	}
 	return nil
 }
