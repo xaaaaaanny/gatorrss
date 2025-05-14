@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	_ "github.com/lib/pq"
 	"github.com/xaaaaaanny/gatorrss/internal/database"
@@ -49,10 +50,11 @@ func main() {
 	existCommands.register("reset", handlerReset)
 	existCommands.register("users", handlerListUsers)
 	existCommands.register("agg", handlerAggregate)
-	existCommands.register("addfeed", handlerCreateFeed)
+	existCommands.register("addfeed", middlewareLoggedIn(handlerCreateFeed))
 	existCommands.register("feeds", handlerListFeeds)
-	existCommands.register("follow", handlerFeedFollow)
-	existCommands.register("following", handlerListFollowFeeds)
+	existCommands.register("follow", middlewareLoggedIn(handlerFeedFollow))
+	existCommands.register("following", middlewareLoggedIn(handlerListFollowFeeds))
+	existCommands.register("unfollow", middlewareLoggedIn(handlerDeleteFeedFromUser))
 
 	cmdName := os.Args[1]
 	cmdArgs := os.Args[2:]
@@ -60,5 +62,17 @@ func main() {
 	err = existCommands.run(appState, command{Name: cmdName, Args: cmdArgs})
 	if err != nil {
 		log.Fatal(err)
+	}
+}
+
+func middlewareLoggedIn(handler func(s *state, cmd command, user database.User) error) func(*state, command) error {
+	return func(s *state, c command) error {
+		userName := s.Config.CurrentUserName
+		currentUser, err := s.db.GetUser(context.Background(), userName)
+		if err != nil {
+			return err
+		}
+
+		return handler(s, c, currentUser)
 	}
 }

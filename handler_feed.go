@@ -20,19 +20,12 @@ func handlerAggregate(s *state, cmd command) error {
 	return nil
 }
 
-func handlerCreateFeed(s *state, cmd command) error {
+func handlerCreateFeed(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) != 2 {
 		return fmt.Errorf("not enought arguments for addFeed command")
 	}
 	title := cmd.Args[0]
 	url := cmd.Args[1]
-
-	userName := s.Config.CurrentUserName
-	currentUser, err := s.db.GetUser(context.Background(), userName)
-	if err != nil {
-		return err
-	}
-	userID := currentUser.ID
 
 	feedParam := database.CreateFeedParams{
 		ID:        uuid.New(),
@@ -40,7 +33,7 @@ func handlerCreateFeed(s *state, cmd command) error {
 		UpdatedAt: time.Now(),
 		Name:      title,
 		Url:       url,
-		UserID:    userID,
+		UserID:    user.ID,
 	}
 
 	feed, err := s.db.CreateFeed(context.Background(), feedParam)
@@ -53,7 +46,7 @@ func handlerCreateFeed(s *state, cmd command) error {
 		ID:        uuid.New(),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
-		UserID:    userID,
+		UserID:    user.ID,
 		FeedID:    feed.ID,
 	}
 

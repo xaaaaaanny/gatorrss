@@ -8,18 +8,11 @@ import (
 	"time"
 )
 
-func handlerFeedFollow(s *state, cmd command) error {
+func handlerFeedFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) != 1 {
 		return fmt.Errorf("not enought arguments for follow command")
 	}
 	url := cmd.Args[0]
-
-	userName := s.Config.CurrentUserName
-	currentUser, err := s.db.GetUser(context.Background(), userName)
-	if err != nil {
-		return err
-	}
-	userID := currentUser.ID
 
 	feed, err := s.db.GetFeedByURL(context.Background(), url)
 	if err != nil {
@@ -31,7 +24,7 @@ func handlerFeedFollow(s *state, cmd command) error {
 		ID:        uuid.New(),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
-		UserID:    userID,
+		UserID:    user.ID,
 		FeedID:    feedID,
 	}
 
@@ -45,25 +38,43 @@ func handlerFeedFollow(s *state, cmd command) error {
 	return nil
 }
 
-func handlerListFollowFeeds(s *state, cmd command) error {
-	userName := s.Config.CurrentUserName
-	currentUser, err := s.db.GetUser(context.Background(), userName)
-	if err != nil {
-		return err
-	}
-	userID := currentUser.ID
-
-	feeds, err := s.db.GetFeedFollowsForUser(context.Background(), userID)
+func handlerListFollowFeeds(s *state, cmd command, user database.User) error {
+	feeds, err := s.db.GetFeedFollowsForUser(context.Background(), user.ID)
 	if err != nil {
 		return err
 	}
 
 	if len(feeds) == 0 {
-		return fmt.Errorf("No feeds followed yet")
+		fmt.Println("No feeds followed yet")
+		return nil
 	}
 
 	for _, feed := range feeds {
 		fmt.Println(feed.FeedName)
 	}
+	return nil
+}
+
+func handlerDeleteFeedFromUser(s *state, cmd command, user database.User) error {
+	if len(cmd.Args) != 1 {
+		return fmt.Errorf("not enought arguments for delete command")
+	}
+	url := cmd.Args[0]
+	feed, err := s.db.GetFeedByURL(context.Background(), url)
+	if err != nil {
+		return err
+	}
+
+	args := database.DeleteFeedFromUserParams{
+		UserID: user.ID,
+		FeedID: feed.ID,
+	}
+
+	err = s.db.DeleteFeedFromUser(context.Background(), args)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("%v unfollowed %v feed", user.Name, feed.Name)
+
 	return nil
 }
